@@ -1,0 +1,10 @@
+2026-05-01 15:05:00,393 | INFO | HTTP Request: GET https://api.gradio.app/gradio-messaging/en "HTTP/1.1 200 OK"
+2026-05-01 15:05:02,435 | INFO | Hierarchical memory initialized
+2026-05-01 15:06:22,685 | INFO | HTTP Request: GET http://localhost:7860/startup-events "HTTP/1.1 200 OK"
+2026-05-01 15:06:22,694 | INFO | HTTP Request: HEAD http://localhost:7860/ "HTTP/1.1 200 OK"
+2026-05-01 15:06:23,551 | INFO | HTTP Request: GET https://api.gradio.app/pkg-version "HTTP/1.1 200 OK"
+2026-05-01 15:06:23,641 | INFO | HTTP Request: GET https://api.gradio.app/v2/tunnel-request "HTTP/1.1 200 OK"
+2026-05-01 15:06:24,963 | INFO | HTTP Request: GET https://checkip.amazonaws.com/ "HTTP/1.1 200 "
+2026-05-01 15:06:27,935 | INFO | HTTP Request: GET https://checkip.amazonaws.com/ "HTTP/1.1 200 "
+2026-05-01 15:07:31,969 | INFO | Memory stored: My name is Subhasis from Bengaluru. I want to become world famous by building yo...
+2026-05-01 15:08:34,536 | INFO | Memory stored: clear...

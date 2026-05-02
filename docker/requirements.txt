@@ -1,0 +1,6 @@
+mlx-lm
+gradio
+chromadb
+pandas
+matplotlib
+PyPDF2

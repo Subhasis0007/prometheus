@@ -1,0 +1,16 @@
+2026-05-01 10:37:22,761 | INFO | Hierarchical memory initialized
+2026-05-01 10:37:22,879 | INFO | HTTP Request: GET http://127.0.0.1:7860/startup-events "HTTP/1.1 200 OK"
+2026-05-01 10:37:22,886 | INFO | HTTP Request: HEAD http://127.0.0.1:7860/ "HTTP/1.1 200 OK"
+2026-05-01 10:37:22,981 | INFO | HTTP Request: GET https://checkip.amazonaws.com/ "HTTP/1.1 200 "
+2026-05-01 10:37:23,168 | INFO | HTTP Request: GET https://api.gradio.app/gradio-messaging/en "HTTP/1.1 200 OK"
+2026-05-01 10:37:23,761 | INFO | HTTP Request: GET https://api.gradio.app/pkg-version "HTTP/1.1 200 OK"
+2026-05-01 10:37:23,881 | INFO | HTTP Request: GET https://api.gradio.app/v2/tunnel-request "HTTP/1.1 200 OK"
+2026-05-01 10:39:35,436 | WARNING | Matplotlib is building the font cache; this may take a moment.
+2026-05-01 10:39:37,939 | INFO | Failed to extract font properties from /System/Library/Fonts/LastResort.otf: tuple indices must be integers or slices, not str
+2026-05-01 10:39:37,948 | INFO | Failed to extract font properties from /System/Library/Fonts/Supplemental/NISC18030.ttf: In FT2Font: Could not set the fontsize (invalid pixel size; error code 0x17)
+2026-05-01 10:39:38,016 | INFO | Failed to extract font properties from /System/Library/Fonts/Apple Color Emoji.ttc: In FT2Font: Could not set the fontsize (invalid pixel size; error code 0x17)
+2026-05-01 10:39:38,036 | INFO | Failed to extract font properties from /System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc: In FT2Font: Can not load face (locations (loca) table missing; error code 0x90)
+2026-05-01 10:39:38,046 | INFO | generated new fontManager
+2026-05-01 10:39:40,078 | INFO | HTTP Request: GET https://chroma-onnx-models.s3.amazonaws.com/all-MiniLM-L6-v2/onnx.tar.gz "HTTP/1.1 200 OK"
+2026-05-01 10:40:28,347 | INFO | Memory stored: My name is Subhasis....
+2026-05-01 10:40:42,501 | INFO | Memory stored: As PROMETHEUS, I understand that your name is Subhasis. Let's reflect on our sha...

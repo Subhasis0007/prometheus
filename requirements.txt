@@ -1,0 +1,6 @@
+typer[all]
+rich
+fastapi
+uvicorn
+requests
+pydantic

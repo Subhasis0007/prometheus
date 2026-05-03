@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Forge Demo - PROMETHEUS Supervised</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        button { margin: 5px; padding: 10px; font-size: 16px; }
+        pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Forge Demo - PROMETHEUS Supervised</h1>
+    <button onclick="testCode()">Code Generation (Todo App)</button>
+    <button onclick="testAgentLoop()">Agent Loop (Todo App)</button>
+    <button onclick="testChat()">Open Chat</button>
+    <button onclick="showSkills()">Show Skills</button>
+    <div id="result"></div>
+
+    <script>
+    async function testCode() {
+        const res = await fetch('/run/code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({request: "Create a todo app"})
+        });
+        const data = await res.json();
+        document.getElementById('result').innerHTML = `<h3>Code Generation</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    async function testAgentLoop() {
+        const res = await fetch('/run/agent-loop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task: "Create a todo app"})
+        });
+        const data = await res.json();
+        document.getElementById('result').innerHTML = `<h3>Agent Loop</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    function testChat() {
+        window.open('/chat', '_blank');
+    }
+
+    async function showSkills() {
+        const res = await fetch('/skills');
+        const data = await res.json();
+        document.getElementById('result').innerHTML = `<h3>Recent Skills</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+    </script>
+</body>
+</html>

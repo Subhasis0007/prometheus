@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Forge Dashboard - PROMETHEUS</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .card { border: 1px solid #ccc; padding: 15px; margin: 10px; width: 400px; display: inline-block; vertical-align: top; }
+    </style>
+</head>
+<body>
+    <h1>Forge Dashboard - PROMETHEUS Overview</h1>
+    <div class="card">
+        <h3>Recent Skills</h3>
+        <button onclick="loadSkills()">Load</button>
+        <pre id="skills"></pre>
+    </div>
+    <div class="card">
+        <h3>Last Memory</h3>
+        <button onclick="loadMemory()">Load</button>
+        <pre id="memory"></pre>
+    </div>
+    <div class="card">
+        <h3>Git Status</h3>
+        <button onclick="loadGit()">Load</button>
+        <pre id="git"></pre>
+    </div>
+    <script>
+    async function loadSkills() {
+        const res = await fetch('/skills');
+        const data = await res.json();
+        document.getElementById('skills').innerHTML = JSON.stringify(data, null, 2);
+    }
+    async function loadMemory() {
+        const res = await fetch('/memory');
+        const data = await res.json();
+        document.getElementById('memory').innerHTML = JSON.stringify(data, null, 2);
+    }
+    async function loadGit() {
+        const res = await fetch('/git');
+        const data = await res.json();
+        document.getElementById('git').innerHTML = JSON.stringify(data, null, 2);
+    }
+    </script>
+</body>
+</html>

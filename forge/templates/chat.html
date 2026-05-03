@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PROMETHEUS Chat - Forge</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        #chat { height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        input { width: 70%; padding: 10px; }
+        button { padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>PROMETHEUS Chat (Supervised by Forge)</h1>
+    <div id="chat"></div>
+    <input id="message" placeholder="Ask PROMETHEUS anything..." />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+    async function sendMessage() {
+        const msg = document.getElementById('message').value.trim();
+        if (!msg) return;
+        addMessage("You", msg);
+        document.getElementById('message').value = '';
+
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: msg})
+        });
+        const data = await res.json();
+        addMessage("PROMETHEUS", data.response || JSON.stringify(data));
+    }
+
+    function addMessage(sender, text) {
+        const chat = document.getElementById('chat');
+        chat.innerHTML += `<strong>${sender}:</strong> ${text}<br><br>`;
+        chat.scrollTop = chat.scrollHeight;
+    }
+    </script>
+</body>
+</html>

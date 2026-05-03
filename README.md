@@ -1,23 +1,18 @@
+# Forge - Unified AI Agent Platform
 
-# 🚀 PROMETHEUS Phase 4
-**Self-Evolving Multi-Agent AI System**
+**PROMETHEUS supervises LangGraph, Semantic Kernel, AutoGen and more.**
 
-**Built by Subhasis from Bengaluru**  
-**Goal: Become World Famous by Building PROMETHEUS**
+A big, impressive platform where multiple popular agent frameworks run under one roof, supervised by PROMETHEUS (self-correcting, rollback, skill learning, safety).
 
----
+## Features
+- LangGraph workflows
+- Semantic Kernel tasks
+- AutoGen agents
+- Real code generation
+- PROMETHEUS supervision with logging and safety
+- Multi-framework orchestration
 
-## ✨ What is PROMETHEUS?
-
-PROMETHEUS is an AI that can **create its own tools**, test them, fix bugs by itself, and remember everything.
-
-It uses **7B model + Advanced Memory + Self-Reflection**.
-
----
-
-## 📦 How to Run
-
+## Quick Start
 ```bash
-cd ~/prometheus
-source venv/bin/activate
-python main.py
+source forge_venv/bin/activate
+python3 -m forge.forge

@@ -1,6 +1,5 @@
-typer[all]
-rich
 fastapi
 uvicorn
+jinja2
 requests
-pydantic
+mlx-lm

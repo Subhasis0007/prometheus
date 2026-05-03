@@ -1,10 +1,10 @@
 # Real agent conversation
 def team_conversation(task: str):
     return {
-        "planner": f"Planner: I suggest breaking '{task}' into 3 steps.",
-        "coder": f"Coder: Here is the code skeleton for '{task}'.",
-        "executor": "Executor: Code executed successfully.",
-        "reviewer": "Reviewer: All good. PROMETHEUS approved.",
-        "final": f"Team completed '{task}' with full collaboration.",
+        "planner": f"Planner: Breaking '{task}' into steps.",
+        "coder": f"Coder: Generating code skeleton.",
+        "executor": "Executor: Running and testing.",
+        "reviewer": "Reviewer: Approved by PROMETHEUS.",
+        "final": f"Full team solution for '{task}' completed.",
         "supervised_by": "PROMETHEUS"
     }

@@ -1,4 +1,5 @@
-venv/
+forge_venv/
+workspace/
 __pycache__/
 *.pyc
 .DS_Store

@@ -1,0 +1,167 @@
+import os
+
+css_url = "https://" + "cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+js_core_url = "https://" + "cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"
+js_python_url = "https://" + "cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"
+
+html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROMETHEUS | Supervisor Dashboard</title>
+    <!-- Prism.js Syntax Highlighting Theme -->
+    <link href="{css_url}" rel="stylesheet" />
+    <style>
+        body {{ font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }}
+        header {{ background-color: #161b22; padding: 15px 30px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 10; }}
+        h1 {{ color: #58a6ff; font-weight: 600; margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }}
+        .status-badge {{ background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid #10b981; }}
+        .container {{ flex-grow: 1; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }}
+        
+        .chat-container {{ flex-grow: 1; background-color: #090c10; border: 1px solid #30363d; border-radius: 8px; overflow-y: auto; padding: 20px; margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px; }}
+        
+        .message {{ padding: 15px 20px; border-radius: 8px; background-color: #161b22; border-left: 4px solid #30363d; animation: fadeIn 0.3s ease-in-out; font-size: 15px; line-height: 1.5; }}
+        @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(5px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+        
+        .agent-researcher {{ border-left-color: #3b82f6; }}
+        .agent-coder {{ border-left-color: #10b981; }}
+        .agent-reviewer {{ border-left-color: #ef4444; }}
+        .agent-prometheus {{ border-left-color: #8b5cf6; background-color: rgba(139, 92, 246, 0.05); }}
+        
+        .agent-name {{ font-weight: 700; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px; }}
+        
+        .input-group {{ display: flex; gap: 10px; background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; }}
+        input[type="text"] {{ flex-grow: 1; padding: 12px 15px; border-radius: 6px; border: 1px solid #30363d; background-color: #0d1117; color: #c9d1d9; font-size: 15px; transition: border-color 0.2s; outline: none; }}
+        input[type="text"]:focus {{ border-color: #58a6ff; }}
+        button {{ padding: 12px 25px; background-color: #238636; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; font-size: 15px; }}
+        button:hover {{ background-color: #2ea043; }}
+        button:disabled {{ background-color: #21262d; color: #8b949e; cursor: not-allowed; }}
+        
+        .text-content {{ white-space: pre-wrap; font-family: 'SF Pro Text', sans-serif; margin-bottom: 10px; }}
+        
+        .loading {{ display: none; text-align: center; color: #8b5cf6; font-weight: bold; margin-bottom: 15px; font-size: 0.9rem; letter-spacing: 1px; animation: pulse 1.5s infinite; }}
+        @keyframes pulse {{ 0% {{ opacity: 0.6; }} 50% {{ opacity: 1; }} 100% {{ opacity: 0.6; }} }}
+
+        pre[class*="language-"] {{ border-radius: 6px; margin: 10px 0; border: 1px solid #30363d; background: #0d1117 !important; }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PROMETHEUS <span style="color: #8b949e; font-weight: 400; font-size: 1.1rem;">// Supervisor Dashboard</span></h1>
+        <div class="status-badge">MLX ENGINE: ONLINE</div>
+    </header>
+
+    <div class="container">
+        <div class="chat-container" id="chat-box">
+            <div style="color: #8b949e; text-align: center; margin-top: auto; margin-bottom: auto; font-style: italic;">
+                Awaiting task input. Sandbox and Memory banks ready.
+            </div>
+        </div>
+        
+        <div class="loading" id="loading-indicator">PROMETHEUS IS ORCHESTRATING THE TEAM...</div>
+        
+        <div class="input-group">
+            <input type="text" id="task-input" placeholder="Enter objective..." onkeypress="if(event.key === 'Enter') runTeam()">
+            <button id="run-btn" onclick="runTeam()">Initialize Run</button>
+        </div>
+    </div>
+
+    <!-- Prism.js Core -->
+    <script src="{js_core_url}"></script>
+    <script src="{js_python_url}"></script>
+
+    <script>
+        async function runTeam() {{
+            const input = document.getElementById('task-input');
+            const btn = document.getElementById('run-btn');
+            const chatBox = document.getElementById('chat-box');
+            const loading = document.getElementById('loading-indicator');
+            const task = input.value.trim();
+
+            if (!task) return;
+
+            input.disabled = true;
+            btn.disabled = true;
+            chatBox.innerHTML = '';
+            loading.style.display = 'block';
+
+            try {{
+                const response = await fetch('/run/team', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ task: task }})
+                }});
+
+                const result = await response.json();
+                loading.style.display = 'none';
+
+                if (result.status === 'success') {{
+                    result.transcript.forEach(turn => {{
+                        const div = document.createElement('div');
+                        div.className = `message agent-${{turn.agent.toLowerCase()}}`;
+                        
+                        const formattedContent = parseMarkdownCode(turn.content);
+                        
+                        div.innerHTML = `
+                            <div class="agent-name" style="color: ${{getColor(turn.agent)}}">
+                                ${{getIcon(turn.agent)}} ${{turn.agent}}
+                            </div>
+                            <div class="text-content">${{formattedContent}}</div>
+                        `;
+                        chatBox.appendChild(div);
+                    }});
+                    
+                    Prism.highlightAllUnder(chatBox);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }} else {{
+                    chatBox.innerHTML = `<div class="message" style="border-left-color: red; color: #ff7b72;">Critical Error: ${{result.error}}</div>`;
+                }}
+            }} catch (err) {{
+                loading.style.display = 'none';
+                chatBox.innerHTML = `<div class="message" style="border-left-color: red; color: #ff7b72;">Network Error: ${{err.message}}</div>`;
+            }}
+
+            input.disabled = false;
+            btn.disabled = false;
+            input.focus();
+        }}
+
+        function parseMarkdownCode(text) {{
+            const escapedText = escapeHtml(text);
+            return escapedText.replace(/```python\\n([\\s\\S]*?)```/g, '<pre><code class="language-python">$1</code></pre>')
+                              .replace(/```([\\s\\S]*?)```/g, '<pre><code>$1</code></pre>');
+        }}
+
+        function getColor(agent) {{
+            if (agent === 'Researcher') return '#3b82f6';
+            if (agent === 'Coder') return '#10b981';
+            if (agent === 'Reviewer') return '#ef4444';
+            if (agent === 'PROMETHEUS') return '#8b5cf6';
+            return '#c9d1d9';
+        }}
+        
+        function getIcon(agent) {{
+            if (agent === 'Researcher') return '🔍';
+            if (agent === 'Coder') return '💻';
+            if (agent === 'Reviewer') return '🛡️';
+            if (agent === 'PROMETHEUS') return '⚡';
+            return '•';
+        }}
+
+        function escapeHtml(unsafe) {{
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }}
+    </script>
+</body>
+</html>"""
+
+with open("forge/templates/team.html", "w") as f:
+    f.write(html_content)
+
+print("✅ UI fixed successfully. You can now refresh the browser!")

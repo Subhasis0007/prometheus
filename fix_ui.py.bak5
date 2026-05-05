@@ -2,9 +2,6 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import glob
-import subprocess
-import threading
-import time
 
 def get_run_reports():
     reports = []
@@ -45,9 +42,7 @@ HTML = """<!DOCTYPE html>
         .run-goal { color: #8b949e; font-size: 0.9rem; margin-top: 6px; }
         input, button { padding: 12px; border-radius: 6px; font-size: 15px; }
         button { background: #238636; color: white; border: none; cursor: pointer; }
-        #output { background: #090c10; border: 1px solid #30363d; border-radius: 8px; padding: 20px; min-height: 300px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.5; }
-        .status { padding: 8px 12px; background: #21262d; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
-        .running { color: #fbbf24; }
+        #output { background: #090c10; border: 1px solid #30363d; border-radius: 8px; padding: 20px; min-height: 300px; white-space: pre-wrap; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -65,77 +60,53 @@ HTML = """<!DOCTYPE html>
                 <input type="text" id="goal" placeholder="Enter your goal..." style="width:70%; background:#0d1117; border:1px solid #30363d; color:#c9d1d9;">
                 <button onclick="startRun()" style="width:25%;">Run Agent</button>
             </div>
-            <div id="status" class="status" style="display:none;"></div>
             <div id="output">Output will appear here...</div>
         </div>
 
         <!-- History -->
         <div id="history" class="section">
-            <h3 style="color:#58a6ff; display:flex; justify-content:space-between; align-items:center;">
-                Past Runs 
-                <button onclick="loadHistory()" style="font-size:12px; padding:6px 12px;">Refresh</button>
-            </h3>
+            <h3 style="color:#58a6ff;">Past Runs</h3>
             <div id="history-list">Loading...</div>
         </div>
     </div>
 
     <script>
-        let autoRefreshInterval = null;
-
         function showSection(name) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(name).classList.add('active');
             event.target.classList.add('active');
-            
-            if (name === 'history') {
-                loadHistory();
-                if (!autoRefreshInterval) {
-                    autoRefreshInterval = setInterval(loadHistory, 5000);
-                }
-            } else {
-                if (autoRefreshInterval) {
-                    clearInterval(autoRefreshInterval);
-                    autoRefreshInterval = null;
-                }
-            }
+            if (name === 'history') loadHistory();
         }
 
         async function startRun() {
             const goal = document.getElementById('goal').value.trim();
             const out = document.getElementById('output');
-            const status = document.getElementById('status');
             if (!goal) return;
-
-            status.style.display = 'block';
-            status.innerHTML = '<span class="running">🚀 Run started in background...</span> Check History tab in a few minutes.';
-            out.innerHTML = 'Agent is running in background. The result will appear in History when finished.';
-            
-            await fetch('/run', {
+            out.innerHTML = 'Starting...';
+            const res = await fetch('/run', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({goal: goal})
             });
+            const data = await res.json();
+            out.innerHTML = data.output || JSON.stringify(data);
         }
 
         async function loadHistory() {
             const container = document.getElementById('history-list');
-            try {
-                const res = await fetch('/history');
-                const runs = await res.json();
-                if (runs.length === 0) {
-                    container.innerHTML = '<p style="color:#8b949e">No runs yet.</p>';
-                    return;
-                }
-                container.innerHTML = runs.map(r => `
-                    <div class="run-card" onclick="viewReport('${r.filename}')">
-                        <div class="run-filename">${r.filename}</div>
-                        <div class="run-goal">${r.goal}</div>
-                    </div>
-                `).join('');
-            } catch(e) {
-                container.innerHTML = 'Failed to load history';
+            const res = await fetch('/history');
+            const runs = await res.json();
+            if (runs.length === 0) {
+                container.innerHTML = '<p style="color:#8b949e">No runs yet.</p>';
+                return;
             }
+            container.innerHTML = runs.map(r => `
+                <div class="run-card" onclick="viewReport('${r.filename}')">
+                    <div class="run-filename">${r.filename}</div>
+                    <div class="run-goal">${r.goal}</div>
+                </div>
+            `).join('');
         }
 
         async function viewReport(filename) {
@@ -144,11 +115,6 @@ HTML = """<!DOCTYPE html>
             const w = window.open('', '_blank');
             w.document.write('<pre style="background:#0d1117;color:#c9d1d9;padding:20px;white-space:pre-wrap;font-family:monospace;">' + text.replace(/</g,'&lt;') + '</pre>');
         }
-
-        // Auto-refresh history when page loads on history tab
-        window.onload = () => {
-            // Start auto-refresh only if user is on history (optional)
-        };
     </script>
 </body>
 </html>"""
@@ -182,6 +148,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == '/run':
+            import subprocess
             data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
             goal = data.get('goal', '')
             
@@ -189,24 +156,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             
-            def run_in_background():
-                try:
-                    cmd = ["uv", "run", "python", "main.py", "start", "--goal", goal]
-                    subprocess.run(cmd, capture_output=True, text=True)
-                except Exception as e:
-                    print(f"Background run error: {e}")
+            try:
+                # Call your actual Prometheus agent
+                cmd = ["uv", "run", "python", "main.py", "start", "--goal", goal]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                output = result.stdout + result.stderr
+            except Exception as e:
+                output = f"Error running agent: {str(e)}"
             
-            threading.Thread(target=run_in_background, daemon=True).start()
-            
-            result = {
-                "status": "success",
-                "output": f"Run started in background for: {goal}"
-            }
-            self.wfile.write(json.dumps(result).encode())
+            response = {"status": "success", "output": output}
+            self.wfile.write(json.dumps(response).encode())
         else:
             self.send_response(404)
             self.end_headers()
 
 if __name__ == "__main__":
-    print("Prometheus Visualizer running at http://localhost:8765")
+    print("🚀 Prometheus Visualizer running at http://localhost:8765")
     HTTPServer(('', 8765), Handler).serve_forever()

@@ -9,50 +9,6 @@ import os
 import glob
 import re
 
-# === Prometheus Architecture Primitives Integration ===
-from enhanced_reviewer import enhanced_review
-from enhanced_state import create_patch, apply_patches, get_shared_memory
-from enhanced_rollback import create_saga, rollback_saga, commit_saga
-from enhanced_tracer import (
-    load_prd_requirements, 
-    trace_generated_code, 
-    get_full_traceability_report,
-    reset_tracer
-)
-
-# === Vector 4: Bidirectional Context Tracer Integration ===
-from enhanced_tracer import (
-    initialize_prd_tracing, 
-    trace_final_code, 
-    get_full_traceability_report,
-    reset_tracer
-)
-
-def initialize_traceability(goal: str, requirements: list = None):
-    """Initialize PRD tracing at the start of a run"""
-    reset_tracer()
-    if requirements is None:
-        # Auto-create basic requirement from goal
-        requirements = [{
-            "id": "req_main",
-            "section": "Goal",
-            "text": goal,
-            "priority": 1
-        }]
-    initialize_prd_tracing(requirements)
-    return requirements
-
-def finalize_traceability(code: str):
-    """Trace final generated code back to PRD requirements"""
-    try:
-        report = trace_final_code(code, ["req_main"])
-        return report
-    except Exception as e:
-        return {"error": str(e)}
-# ============================================================
-# =========================================================
-
-
 from prometheus_planner_agent import boot_agent, create_plan, UserGoal
 from prometheus_coder_agent import execute as coder_execute, ThoughtStream as CoderStream
 from prometheus_reviewer_agent import evaluate as reviewer_evaluate, ThoughtStream as ReviewerStream, Traceback
@@ -110,14 +66,7 @@ def coder_node(state: PrometheusState) -> PrometheusState:
 
     context = state["working_memory"]
     if state.get("last_error"):
-        context += f"""\n\n[PREVIOUS ERROR + STRICT RULES]:
-{state['last_error']}
-
-IMPORTANT RULES FOR THIS FIX:
-- Use ONLY Python standard library (csv, sys, os, etc.). NEVER import pandas, numpy or any external library unless the goal explicitly requires it.
-- Do not repeat the same mistake from before.
-- Write clean, complete and runnable code for ONLY this step.
-- Fix the exact error shown above."""
+        context += f"\n\n[PREVIOUS ERROR]:\n{state['last_error']}\nFix this."
 
     stream = CoderStream(task=task, campaign_context=context)
     new_code = coder_execute(stream, model, tok)
@@ -130,42 +79,19 @@ IMPORTANT RULES FOR THIS FIX:
     }
 
 def reviewer_node(state: PrometheusState) -> PrometheusState:
-    # Enhanced Reviewer with Multi-Objective Reward
-    try:
-        # Run original reviewer first
-        review = reviewer_evaluate(ReviewerStream(task=task, artifact=state["last_patch"]), model, tok)
-        state["original_review"] = review
-        
-        # Then apply multi-objective reward evaluation
-        code = state.get("last_patch", "") or state.get("generated_code", "")
-        tests = state.get("test_results", {})
-        tokens = state.get("token_count", 0)
-        requirements = state.get("requirements", [])
-        
-        should_accept, report = enhanced_review(
-            generated_code=code,
-            test_results=tests,
-            token_count=tokens,
-            requirements=requirements,
-            min_reward_threshold=0.60
-        )
-        
-        state["review_report"] = report
-        state["review_score"] = report["final_reward"]
-        state["review_passed"] = should_accept
-        
-        if should_accept:
-            state["status"] = "accepted"
-        else:
-            state["status"] = "needs_revision"
-            state["feedback"] = f"Low multi-objective score: {report['final_reward']}"
-            
-    except Exception as e:
-        state["status"] = "error"
-        state["feedback"] = str(e)
-    
-    return state
+    console.rule("[bold yellow]REVIEWER[/bold yellow]")
+    model = state["model"]
+    tok = state["tokenizer"]
+    task = state["plan"][state["current_step_index"]]
+    review = reviewer_evaluate(ReviewerStream(task=task, artifact=state["last_patch"]), model, tok)
 
+    if isinstance(review, Traceback):
+        console.print("[red]✗ Rejected by Reviewer[/red]")
+        ledger = state.get("traceback_ledger", []) + [{"step": state["current_step_index"], "error": review.error_message}]
+        return {**state, "traceback_ledger": ledger, "status": "review_rejected"}
+    else:
+        console.print("[green]✓ Approved by Reviewer[/green]")
+        return {**state, "working_memory": review, "status": "review_approved"}
 
 def executor_node(state: PrometheusState) -> PrometheusState:
     console.rule("[bold magenta]EXECUTOR[/bold magenta]")
@@ -211,9 +137,7 @@ def should_continue(state: PrometheusState) -> str:
         else:
             return "finish"
     elif state["status"] == "max_retries_exceeded":
-        # IMPROVED: Move to next step instead of stopping completely
-        console.print("[yellow]⚠ Skipping to next step after repeated failures on this step[/yellow]")
-        return "next_step"
+        return "finish"
     elif state["status"] in ["execution_failed_with_error", "review_rejected"]:
         return "coder"
     return "coder"
@@ -464,95 +388,3 @@ def status():
 
 if __name__ == "__main__":
     app()
-# ============================================================
-# PROMETHEUS ARCHITECTURE INTEGRATION HELPERS
-# ============================================================
-
-def enhanced_reviewer_step(state: dict) -> dict:
-    """
-    Drop-in replacement for your old reviewer logic.
-    Uses Multi-Objective Reward instead of simple test checking.
-    """
-    code = state.get("generated_code") or state.get("code", "")
-    tests = state.get("test_results", {})
-    tokens = state.get("token_count", 0)
-    requirements = state.get("requirements", [])
-    
-    should_accept, report = enhanced_review(
-        generated_code=code,
-        test_results=tests,
-        token_count=tokens,
-        requirements=requirements,
-        min_reward_threshold=0.62
-    )
-    
-    state["review_report"] = report
-    state["review_score"] = report["final_reward"]
-    state["review_passed"] = should_accept
-    
-    if should_accept:
-        state["status"] = "accepted"
-    else:
-        state["status"] = "needs_revision"
-        state["feedback"] = f"Low multi-objective score: {report['final_reward']}"
-    
-    return state
-
-
-def initialize_prd_tracing(requirements: List[Dict]):
-    """Call this at the start of a new run"""
-    reset_tracer()
-    load_prd_requirements(requirements)
-
-
-def trace_final_code(code: str, constraint_ids: List[str]):
-    """Call this after code generation to maintain traceability"""
-    trace_generated_code(code, constraint_ids)
-    return get_full_traceability_report()
-
-
-def reviewer(state):
-    """Enhanced Reviewer using Multi-Objective Reward"""
-    return enhanced_reviewer_step(state)
-
-
-
-# === Vector 2: State Reducer (CRDT-style) Integration ===
-from enhanced_state import create_patch, apply_patches, get_shared_memory, update_langgraph_state_with_patches
-
-def safe_state_update(state: dict, agent_id: str, target: str, operation: str, content: str = None):
-    """Safe way for any agent to propose changes to shared memory"""
-    patch = create_patch(agent_id, target, operation, content)
-    result = apply_patches([patch])
-    state["shared_memory"] = get_shared_memory().node_registry
-    state["memory_version"] = result.get("version_vector", {})
-    return state
-# ============================================================
-
-
-
-# === Vector 3: AetherOS Rollback Protocol Integration ===
-from enhanced_rollback import create_saga, rollback_saga, commit_saga, register_docker_container, register_port_binding
-
-active_infra_saga = None
-
-def start_infrastructure_saga():
-    """Call this when starting Docker / infrastructure work"""
-    global active_infra_saga
-    active_infra_saga = create_saga()
-    return active_infra_saga.saga_id
-
-def safe_rollback():
-    """Emergency rollback if something fails"""
-    global active_infra_saga
-    if active_infra_saga:
-        rollback_saga(active_infra_saga.saga_id)
-        active_infra_saga = None
-
-def complete_infrastructure_saga():
-    """Call this when infrastructure setup succeeds"""
-    global active_infra_saga
-    if active_infra_saga:
-        commit_saga(active_infra_saga.saga_id)
-        active_infra_saga = None
-# ============================================================

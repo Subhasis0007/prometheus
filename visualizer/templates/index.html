@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prometheus • Visualizer</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 40px; background: #0f0f12; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header h1 { margin: 0; font-size: 28px; color: #fff; }
+        table { width: 100%; border-collapse: collapse; background: #1a1a1f; border-radius: 12px; overflow: hidden; }
+        th { background: #111; color: #aaa; font-weight: 500; text-align: left; padding: 18px 24px; font-size: 13px; }
+        td { padding: 18px 24px; border-top: 1px solid #2a2a32; }
+        tr:hover { background: #222; }
+        .goal { max-width: 460px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .status { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+        .status-success { background: #052e16; color: #4ade80; }
+        .btn {
+            background: #1f6feb; color: white; padding: 6px 14px; border-radius: 6px;
+            text-decoration: none; font-size: 13px; font-weight: 500; display: inline-block;
+            margin-left: 6px;
+        }
+        .btn:hover { background: #388bfd; }
+        .btn-rerun { background: #238636; }
+        .btn-rerun:hover { background: #2ea043; }
+        .btn-delete { background: #b91c1c; }
+        .btn-delete:hover { background: #dc2626; }
+        .btn-running { background: #6b7280; cursor: not-allowed; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Prometheus Visualizer</h1>
+            <div style="color:#888;">{{ runs|length }} runs</div>
+        </div>
+
+        {% if runs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Goal</th>
+                    <th>Steps</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in runs %}
+                <tr>
+                    <td style="color:#666;">{{ loop.index }}</td>
+                    <td style="color:#aaa; font-size:14px;">{{ run.timestamp }}</td>
+                    <td class="goal">{{ run.goal }}</td>
+                    <td style="font-family:monospace; color:#aaa;">{{ run.steps }}</td>
+                    <td>
+                        {% if 'SUCCESS' in run.status %}
+                            <span class="status status-success">{{ run.status }}</span>
+                        {% else %}
+                            <span class="status">{{ run.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right; white-space:nowrap;">
+                        <a href="/run/{{ run.filename }}" class="btn">View</a>
+                        <a href="/rerun/{{ run.filename }}" 
+                           class="btn btn-rerun"
+                           onclick="this.classList.add('btn-running'); this.innerText='Running...';">
+                            Rerun
+                        </a>
+                        <a href="/delete/{{ run.filename }}" 
+                           class="btn btn-delete"
+                           onclick="return confirm('Delete this run permanently?');">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</body>
+</html>

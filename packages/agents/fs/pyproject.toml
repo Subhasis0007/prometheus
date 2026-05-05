@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prometheus-fs-agent"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "prometheus-core"
+]
+
+[tool.uv.sources]
+prometheus-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["prometheus_fs_agent"]

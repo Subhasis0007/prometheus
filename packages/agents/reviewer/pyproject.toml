@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prometheus-reviewer-agent"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "mlx-lm>=0.31.3",
+    "prometheus-core",
+]
+
+[tool.uv.sources]
+prometheus-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["prometheus_reviewer_agent"]
